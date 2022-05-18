@@ -22,21 +22,6 @@ T=20/f;     % TIME OF THE SIMULATION (SET TO TAKE 20 FULL-CYCLES)
 T_SMP=2e-6; % STEP SIZE OF THE SIMULATION
 
 %% TO RUN THE SIMULINK FILE
-%Overwrite variables with those found in instruction manual for testing
-if exist('testing', 'var') && testing
-    VDC = 8.33; %Testing
-    V1 = 5.893; %Testing
-    V3 = 1.572; %Testing
-    V5 = 0; %Testing
-    a = [21.99, 36.14, 50.44]; %Testing
-    RL = 3.335; %Testing
-    LL = 6.670e-3; %Testing
-    f = 50; %Testing
-    w=2*pi*f;   % FUNDAMENTAL FREQUENCY BASED ON RADIANT, FOR FUTURE CODES
-    T=20/f;     % TIME OF THE SIMULATION (SET TO TAKE 20 FULL-CYCLES)
-    T_SMP=2e-6; % STEP SIZE OF THE SIMULATION
-end
-
 run('SHM_SIM.slx')  % THIS CODE ONLY OPENS THE SIMULINK FILE
 sim('SHM_SIM.slx')  % THE NECESSARY CODE TO RUN THE SIMULINK FILE
 
@@ -52,18 +37,12 @@ V0_FT_ANG = -sign(V0_FT) * 180;
 V0_FT_ANG(V0_FT_ANG==-180) = 0;
 
 %% OUTPUT VOLTAGE TIME-DOMAIN HARMONIC APPROXIMATION CODES SHOULD BE WRITTEN HERE
-V0_FT_TIME = 4/pi * VDC * (1./harmonic_num .* (sin(harmonic_num.*a_rad(1)) - sin(harmonic_num.*a_rad(2)) + sin(harmonic_num.*a_rad(3)))) .* cos(harmonic_num*2*pi*f*t);
+PHI = -sign(V0_FT) * 180;
+PHI(PHI<0) = 0;
+V0_FT_TIME = abs(V0_FT) .* cos(harmonic_num.*2*pi*f.*t + PHI);
 V0_FT_TIME_1 = sum(V0_FT_TIME([1],:), 1)';
 V0_FT_TIME_3 = sum(V0_FT_TIME([1:3],:), 1)';
 V0_FT_TIME_8 = sum(V0_FT_TIME([1:8],:), 1)';
-
-hold off;
-plot(t-t(end)+1/f,vo);
-hold on;
-plot(t-t(end)+1/f,V0_FT_TIME_1);
-plot(t-t(end)+1/f,V0_FT_TIME_3);
-plot(t-t(end)+1/f,V0_FT_TIME_8);
-xlim([0 1/f]);
 
 %% OUTPUT VOLTAGE RMS AND THD CALCULATIONS SHOULD BE WRITTEN HERE
 VRMS = VDC*sqrt(2/pi * (a_rad(1) - a_rad(2) + a_rad(3)));
@@ -79,9 +58,7 @@ I_ANG_RAD = atan2((harmonic_num*2*pi*f*LL), RL);
 I_ANG = I_ANG_RAD * 180/pi;
 
 %% OUTPUT CURRENT TIME-DOMAIN HARMONIC APPROXIMATION CODES SHOULD BE WRITTEN HERE
-PHI = -sign(V0_FT_TIME) * 180;
-PHI(PHI<0) = 0;
-I_TIME = (V0_FT_TIME./Z) .* cos(harmonic_num*2*pi*f*t + (PHI*pi/180) - atan((harmonic_num*2*pi*f*LL)/(RL)));
+I_TIME = (V0_FT./Z) .* cos(harmonic_num*2*pi*f*t + PHI - atan((harmonic_num*2*pi*f*LL)/(RL)));
 I_TIME_1 = sum(I_TIME([1], :), 1);
 I_TIME_3 = sum(I_TIME([1:3], :), 1);
 I_TIME_8 = sum(I_TIME([1:8], :), 1);
@@ -89,14 +66,6 @@ I_TIME_8 = sum(I_TIME([1:8], :), 1);
 %% OUTPUT CURRENT RMS AND THD CALCULATIONS SHOULD BE WRITTEN HERE
 IRMS = sqrt(sum(abs(I).^2/2));
 OUTPUT_CURRENT_THD = sqrt(2*abs(IRMS)^2 - abs(I(1))^2)/abs(I(1)) * 100;
-
-hold off;
-plot(t-t(end)+1/f,io);
-hold on;
-plot(t-t(end)+1/f,I_TIME_1);
-plot(t-t(end)+1/f,I_TIME_3);
-plot(t-t(end)+1/f,I_TIME_8);
-xlim([0 1/f]);
 
 %% POWER CALCULATIONS SHOULD BE WRITTEN HERE
 PL_CAL = RL*(IRMS^2);
@@ -129,12 +98,32 @@ xlabel('Frequency (Hz)')
 ylabel('|V_O|')
 title('Frequency Content')
 
-
 % PLOTTING THE OBTAINED TIME-DOMAIN OUTPUT VOLTAGE 
 figure(4482)
+hold on;
 plot(t-t(end)+1/f,vo,'LineWidth',2)
+plot(t-t(end)+1/f,V0_FT_TIME_1);
+plot(t-t(end)+1/f,V0_FT_TIME_3);
+plot(t-t(end)+1/f,V0_FT_TIME_8);
+hold off;
 grid on
 xlim([0 1/f])
 xlabel('Time (sec)')
 ylabel('Voltage (V)')
 title('Output Voltage (v_o)')
+legend(["V_o", "V_o(1)", "V_o(3)", "V_o(8)"])
+
+% PLOTTING THE OBTAINED TIME-DOMAIN OUTPUT CURRENT 
+figure(4483)
+hold on;
+plot(t-t(end)+1/f,io,'LineWidth',2)
+plot(t-t(end)+1/f,I_TIME_1);
+plot(t-t(end)+1/f,I_TIME_3);
+plot(t-t(end)+1/f,I_TIME_8);
+hold off;
+grid on
+xlim([0 1/f])
+xlabel('Time (sec)')
+ylabel('Current (I)')
+title('Output Current (I_o)')
+legend(["I_o", "I_o(1)", "I_o(3)", "I_o(8)"])
