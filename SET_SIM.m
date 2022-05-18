@@ -37,7 +37,7 @@ V0_FT_ANG = -sign(V0_FT) * 180;
 V0_FT_ANG(V0_FT_ANG==-180) = 0;
 
 %% OUTPUT VOLTAGE TIME-DOMAIN HARMONIC APPROXIMATION CODES SHOULD BE WRITTEN HERE
-PHI = -sign(V0_FT) * 180;
+PHI = -sign(V0_FT) * pi;
 PHI(PHI<0) = 0;
 V0_FT_TIME = abs(V0_FT) .* cos(harmonic_num.*2*pi*f.*t + PHI);
 V0_FT_TIME_1 = sum(V0_FT_TIME([1],:), 1)';
